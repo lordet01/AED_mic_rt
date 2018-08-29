@@ -33,17 +33,19 @@ audio_file = open(WAVE_OUTPUT_FILENAME, "ab")
 f = open("debug.txt", 'a')
  
 #for i in range(0, int(RATE / FRAME_LENGTH * RECORD_SECONDS)):
-x_blk = np.zeros((N_MFCC, N_BLOCK), dtype=float)
+x = np.zeros((N_MFCC,1), dtype='int16')
+x_blk = np.zeros((N_MFCC, N_BLOCK), dtype='float32')
 while True:
 	audio_frame = stream.read(FRAME_LENGTH) #Read Audio Frame
 	audio_file.write(audio_frame) #Write Audio Frame to pcm file
 	
-	audio_frame = np.frombuffer(audio_frame, dtype=np.int16) #Convert Byte to short(int16)
-	audio_frame = [[audio_frame[::2]], [audio_frame[1::2]]] #Separate to each channel
-	audio_frame = np.mean(audio_frame, axis=1) # Down-mix to mono from stereo (averaging)
+	x = np.frombuffer(audio_frame, dtype=np.int16) #Convert Byte to short(int16)
+	x = [x[::2], x[1::2]] #Separate to each channel
+	np.transpose(x)
+	np.mean(x, axis=1) # Down-mix to mono from stereo (averaging)
 	
 	# Calculate MFCC features from the raw signal
-	audio_frame = audio_frame.astype(float) #Convert data type from int to float
+	audio_frame = audio_frame.astype('float32') #Convert data type from int to float
 	mfcc = librosa.feature.mfcc(y=audio_frame, sr=RATE, hop_length=FRAME_LENGTH, n_mfcc=N_MFCC)
 
 	# Stack frames into buffer
