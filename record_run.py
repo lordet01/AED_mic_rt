@@ -21,29 +21,35 @@ stream = audio.open(format=FORMAT, channels=CHANNELS,
                 rate=RATE, input=True,
                 frames_per_buffer=FRAME_LENGTH)
 print ("recording...")
-frames = []
  
 #save recorded file into pcm file
 audio_file = open(WAVE_OUTPUT_FILENAME, "ab") 
 
 #Load NNet Model
-saver.restore(sess, './my-model-20180402-1000')
-decision = tf.argmax(hypothesis, 1)
+##saver.restore(sess, './my-model-20180402-1000')
+##decision = tf.argmax(hypothesis, 1)
+
+#Files for debugging
+f = open("debug.txt", 'a')
  
 #for i in range(0, int(RATE / FRAME_LENGTH * RECORD_SECONDS)):
-x_blk = np.zeros(N_MFCC, N_BLOCK)
+x_blk = np.zeros((N_MFCC, N_BLOCK), dtype=float)
 while True:
 	audio_frame = stream.read(FRAME_LENGTH) #Read Audio Frame
-	audio_frame = audio_frame.astype(float) #Convert data type from int to float
-	audio_frame = np.mean(audio_frame, axis=1) # Down-mix to mono from stereo (averaging)
-	
 	audio_file.write(audio_frame) #Write Audio Frame to pcm file
 	
+	audio_frame = np.frombuffer(audio_frame, dtype=np.int16) #Convert Byte to short(int16)
+	audio_frame = [[audio_frame[::2]], [audio_frame[1::2]]] #Separate to each channel
+	audio_frame = np.mean(audio_frame, axis=1) # Down-mix to mono from stereo (averaging)
+	
 	# Calculate MFCC features from the raw signal
+	audio_frame = audio_frame.astype(float) #Convert data type from int to float
 	mfcc = librosa.feature.mfcc(y=audio_frame, sr=RATE, hop_length=FRAME_LENGTH, n_mfcc=N_MFCC)
 
 	# Stack frames into buffer
 	x_blk = [x_blk[:, 1:], mfcc]
+	f.write(x_blk)
+
 	
 	
 	
